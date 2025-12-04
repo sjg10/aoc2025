@@ -16,7 +16,7 @@ def adventofcode(current_day):
         end = perf_counter()
         print(f"Part 1: {res[0]}")
         print(f"Part 2: {res[1]}")
-        print(f"Time elapsed: {(end - start) / 1000:.02f}ms")
+        print(f"Time elapsed: {(end - start) * 1000:.02f}ms")
 
 
 if __name__ == "__main__":
