@@ -2,6 +2,7 @@ from math import prod
 from operator import itemgetter
 import re
 from collections import defaultdict
+from enum import Enum
 
 
 def p1(cs, os):
