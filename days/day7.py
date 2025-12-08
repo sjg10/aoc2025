@@ -13,8 +13,7 @@ def count_splits(lines):
                 cur[i] = 1
             elif c == "^" and i in cur:
                 splits += 1
-                cnt = cur[i]
-                del cur[i]
+                cnt = cur.pop(i)
                 if i > 0:
                     cur[i - 1] += cnt
                 if i < (len(l.strip()) - 1):
