@@ -1,50 +1,30 @@
 import heapq
-import numpy as np
-from sympy import Eq, solve, abc, IndexedBase
-from sympy.tensor import get_indices
-from itertools import count, product
-from math import gcd
+import pulp
 
 
 class Machine:
     def __init__(self, line):
         ls = line.split()
-        self.aim = 0
-        for i, c in enumerate(ls[0][1:-1]):
-            if c == "#":
-                self.aim += 2**i
-        self.light_cnt = len(ls[0]) - 2
-        self.size = 2 ** (self.light_cnt)
+        self.aim = tuple(c == "#" for c in ls[0][1:-1])
         self.buttons = []
         for buttonset in ls[1:-1]:
-            cur = 0
-            for b in buttonset[1:-1].split(","):
-                cur |= pow(2, int(b))
-            self.buttons.append(cur)
-        self.end = set(ls[-1].split(","))
+            self.buttons.append(set(map(int, buttonset[1:-1].split(","))))
+        self.counter_aim = tuple(map(int, ls[-1][1:-1].split(",")))
 
     def lightup(self):
-        # print("\nAim", rep(self.aim, self.light_cnt))
-        visited = {0: 0}
-        h = [(0, 0)]
-        nodes = set(range(self.size))
-        while nodes and h:
+        initial = tuple(False for _ in self.aim)
+        visited = {initial: 0}
+        h = [(0, initial)]
+        while h:
             current_weight, min_node = heapq.heappop(h)
-            try:
-                while min_node not in nodes:
-                    current_weight, min_node = heapq.heappop(h)
-            except IndexError:
-                break
-            # print("Visiting", rep(min_node, self.light_cnt))
             if min_node == self.aim:
-                # print("Arrived", current_weight)
                 return current_weight
 
-            nodes.remove(min_node)
-
             for bs in self.buttons:
-                v = min_node ^ bs
-                # print("To", rep(v, self.light_cnt))
+                v = list(min_node)
+                for b in bs:
+                    v[b] = not v[b]
+                v = tuple(v)
                 weight = current_weight + 1
                 if v not in visited or weight < visited[v]:
                     visited[v] = weight
@@ -52,32 +32,26 @@ class Machine:
         return None
 
     def jolt(self):
-        # print("\nAim", rep(self.aim, self.light_cnt))
-        visited = {0: 0}
-        h = [(0, 0)]
-        nodes = set(range(self.size))
-        while nodes and h:
-            current_weight, min_node = heapq.heappop(h)
-            try:
-                while min_node not in nodes:
-                    current_weight, min_node = heapq.heappop(h)
-            except IndexError:
-                break
-            # print("Visiting", rep(min_node, self.light_cnt))
-            if min_node == self.aim:
-                # print("Arrived", current_weight)
-                return current_weight
+        prob = pulp.LpProblem("MachineJolt", pulp.LpMinimize)
+        self.btnvars = []
 
-            nodes.remove(min_node)
-
-            for bs in self.buttons:
-                v = min_node ^ bs
-                # print("To", rep(v, self.light_cnt))
-                weight = current_weight + 1
-                if v not in visited or weight < visited[v]:
-                    visited[v] = weight
-                    heapq.heappush(h, (weight, v))
-        return None
+        for i in range(len(self.buttons)):
+            self.btnvars.append(pulp.LpVariable(f"btn{i}", 0, None, pulp.LpInteger))
+        # objective
+        prob += pulp.lpSum(self.btnvars), "TotalButtonPresses"
+        # constraints
+        for i in range(len(self.counter_aim)):
+            prob += (
+                pulp.lpSum(
+                    self.btnvars[j]
+                    for j in range(len(self.buttons))
+                    if (i in self.buttons[j])
+                )
+                == self.counter_aim[i],
+                f"Counter{i}",
+            )
+        prob.solve(pulp.PULP_CBC_CMD(msg=0))
+        return int(pulp.value(prob.objective))
 
 
 class Factory:

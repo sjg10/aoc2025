@@ -9,4 +9,4 @@ def test_part1_2():
     ]
     f = Factory(l)
     assert f.p1() == 7
-    # assert f.p2() == 33
+    assert f.p2() == 33
