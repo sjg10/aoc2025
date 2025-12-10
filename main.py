@@ -21,4 +21,4 @@ def adventofcode(current_day):
 
 if __name__ == "__main__":
     print(f"Advent Of Code 2025")
-    adventofcode(9)
+    adventofcode(10)
