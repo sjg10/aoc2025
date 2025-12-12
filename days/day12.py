@@ -154,6 +154,7 @@ class PresentPack:
     """
     Store all presents and trees
     """
+
     def __init__(self, lines):
         self.presents = []
         self.trees = []
